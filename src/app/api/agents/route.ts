@@ -27,14 +27,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: validation.error ?? 'Invalid payload' }, { status: 400 });
   }
 
-  const { name, assistantId } = validation.value;
+  const { name, assistantId, publicKey } = validation.value;
   const existing = await getAgent(name);
   if (existing) {
     return NextResponse.json({ error: 'Agent already exists' }, { status: 409 });
   }
 
   try {
-    const agent = await createAgent(name, assistantId);
+    const agent = await createAgent(name, assistantId, publicKey ?? undefined);
     return NextResponse.json({ agent }, { status: 201 });
   } catch (error) {
     console.error('Failed to create agent', error);

@@ -31,12 +31,6 @@ export default function HomePage() {
           >
             Sign in to manage agents
           </Link>
-          <Link
-            href="/demo"
-            className="rounded-md border border-slate-900 px-6 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-900 hover:text-white"
-          >
-            View Three.js demo
-          </Link>
         </div>
         <AgentGrid />
       </div>

@@ -7,11 +7,13 @@ import type { Agent } from '@/types/agent';
 type FormState = {
   name: string;
   assistantId: string;
+  publicKey: string;
 };
 
 type EditingState = {
   name: string;
   assistantId: string;
+  publicKey: string;
 } | null;
 
 async function fetchAgents(): Promise<Agent[]> {
@@ -25,12 +27,21 @@ async function fetchAgents(): Promise<Agent[]> {
 }
 
 async function createAgentRequest(payload: FormState) {
+  const body: Record<string, string> = {
+    name: payload.name.trim(),
+    assistantId: payload.assistantId.trim(),
+  };
+
+  if (payload.publicKey.trim()) {
+    body.publicKey = payload.publicKey.trim();
+  }
+
   const response = await fetch('/api/agents', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -42,13 +53,19 @@ async function createAgentRequest(payload: FormState) {
   return result.agent;
 }
 
-async function updateAgentRequest(name: string, assistantId: string) {
+async function updateAgentRequest(name: string, assistantId: string, publicKey: string) {
+  const body: Record<string, string> = {
+    assistantId: assistantId.trim(),
+  };
+
+  body.publicKey = publicKey.trim();
+
   const response = await fetch(`/api/agents/${name}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ assistantId }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -74,6 +91,7 @@ async function deleteAgentRequest(name: string) {
 const initialForm: FormState = {
   name: '',
   assistantId: '',
+  publicKey: '',
 };
 
 export default function AdminDashboard() {
@@ -124,7 +142,11 @@ export default function AdminDashboard() {
   };
 
   const startEditing = (agent: Agent) => {
-    setEditing({ name: agent.name, assistantId: agent.assistantId });
+    setEditing({
+      name: agent.name,
+      assistantId: agent.assistantId,
+      publicKey: agent.publicKey ?? '',
+    });
     setSuccessMessage(null);
     setError(null);
   };
@@ -144,7 +166,7 @@ export default function AdminDashboard() {
     setSuccessMessage(null);
 
     try {
-      const updated = await updateAgentRequest(editing.name, editing.assistantId);
+      const updated = await updateAgentRequest(editing.name, editing.assistantId, editing.publicKey);
       setAgents((prev) => prev.map((agent) => (agent.name === updated.name ? updated : agent)));
       setEditing(null);
       setSuccessMessage(`Agent "${updated.name}" updated successfully.`);
@@ -175,6 +197,10 @@ export default function AdminDashboard() {
 
   const updateEditingAssistantId = (value: string) => {
     setEditing((prev) => (prev ? { ...prev, assistantId: value } : prev));
+  };
+
+  const updateEditingPublicKey = (value: string) => {
+    setEditing((prev) => (prev ? { ...prev, publicKey: value } : prev));
   };
 
   return (
@@ -208,6 +234,18 @@ export default function AdminDashboard() {
               className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
             />
           </label>
+          <label className="flex flex-col text-sm font-medium text-slate-700">
+            Vapi public key
+            <input
+              value={formState.publicKey}
+              onChange={(event) => setFormState((prev) => ({ ...prev, publicKey: event.target.value }))}
+              placeholder="pub_xxx"
+              className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+            />
+            <span className="mt-1 text-xs font-normal text-slate-500">
+              Optional. Leave blank to use the project-wide key.
+            </span>
+          </label>
           <div className="sm:col-span-2 flex items-center justify-between">
             <button
               type="submit"
@@ -232,7 +270,7 @@ export default function AdminDashboard() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Existing Agents</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Manage assistant IDs or remove agents you no longer need.
+              Manage assistant IDs, assign per-agent public keys, or remove agents you no longer need.
             </p>
           </div>
         </div>
@@ -248,6 +286,7 @@ export default function AdminDashboard() {
                 <tr>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Assistant ID</th>
+                  <th className="px-4 py-3">Public Key</th>
                   <th className="px-4 py-3">Created</th>
                   <th className="px-4 py-3" aria-label="actions" />
                 </tr>
@@ -257,6 +296,9 @@ export default function AdminDashboard() {
                   <tr key={agent.name}>
                     <td className="px-4 py-3 font-medium text-slate-900">{agent.name}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-700">{agent.assistantId}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-700">
+                      {agent.publicKey ?? '—'}
+                    </td>
                     <td className="px-4 py-3 text-xs text-slate-500">
                       {new Date(agent.createdAt).toLocaleString()}
                     </td>
@@ -291,21 +333,31 @@ export default function AdminDashboard() {
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Edit Agent</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Update the assistant ID for <span className="font-semibold">{editing.name}</span>.
+            Update the assistant and public key for <span className="font-semibold">{editing.name}</span>.
           </p>
-          <form onSubmit={handleUpdate} className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="flex flex-col text-sm font-medium text-slate-700">
-                Assistant ID
-                <input
-                  required
-                  value={editing.assistantId}
-                  onChange={(event) => updateEditingAssistantId(event.target.value)}
-                  className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-                />
-              </label>
-            </div>
-            <div className="flex gap-2">
+          <form onSubmit={handleUpdate} className="mt-4 grid gap-4 sm:grid-cols-2">
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Assistant ID
+              <input
+                required
+                value={editing.assistantId}
+                onChange={(event) => updateEditingAssistantId(event.target.value)}
+                className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              />
+            </label>
+            <label className="flex flex-col text-sm font-medium text-slate-700">
+              Vapi public key
+              <input
+                value={editing.publicKey}
+                onChange={(event) => updateEditingPublicKey(event.target.value)}
+                placeholder="pub_xxx"
+                className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              />
+              <span className="mt-1 text-xs font-normal text-slate-500">
+                Leave blank to inherit the project-wide key.
+              </span>
+            </label>
+            <div className="sm:col-span-2 flex gap-2">
               <button
                 type="submit"
                 disabled={saving}

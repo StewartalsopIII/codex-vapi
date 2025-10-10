@@ -5,25 +5,43 @@ import Vapi from '@vapi-ai/web';
 
 type Props = {
   assistantId: string;
+  publicKey?: string | null;
 };
 
 type CallState = 'idle' | 'connecting' | 'in-call' | 'speaking';
 
-export default function VapiWidget({ assistantId }: Props) {
+export default function VapiWidget({ assistantId, publicKey }: Props) {
   const [callState, setCallState] = useState<CallState>('idle');
   const [messages, setMessages] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const vapiRef = useRef<Vapi | null>(null);
 
   useEffect(() => {
-    const publicKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+    const projectKey = process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY;
+    const effectiveKey = publicKey?.trim() || projectKey;
 
-    if (!publicKey) {
-      setError('Vapi public key is not configured. Set NEXT_PUBLIC_VAPI_PUBLIC_KEY in your environment.');
+    if (!effectiveKey) {
+      if (vapiRef.current) {
+        try {
+          vapiRef.current.stop();
+        } catch (stopError) {
+          console.error('Failed to stop Vapi client during reinitialisation', stopError);
+        }
+      }
+      vapiRef.current = null;
+      setCallState('idle');
+      setMessages([]);
+      setError(
+        'Vapi public key is not configured. Provide a per-agent key or set NEXT_PUBLIC_VAPI_PUBLIC_KEY in your environment.'
+      );
       return;
     }
 
-    const client = new Vapi(publicKey);
+    setMessages([]);
+    setCallState('idle');
+    setError(null);
+
+    const client = new Vapi(effectiveKey);
     vapiRef.current = client;
 
     const handleCallStart = () => {
@@ -88,7 +106,7 @@ export default function VapiWidget({ assistantId }: Props) {
 
       vapiRef.current = null;
     };
-  }, []);
+  }, [publicKey]);
 
   const startCall = async () => {
     if (!vapiRef.current) {

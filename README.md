@@ -7,6 +7,7 @@ A Next.js 15 (App Router) implementation of the **VAPI Multi-Agent Voice Platfor
 - Secure API routes for authentication and agent CRUD backed by Vercel KV.
 - Server-enforced validations to keep agent names unique, safe, and reserved-word free.
 - Client-side Vapi widget that subscribes to key events and calls `start/stop` with a string `assistantId`.
+- Optional per-agent Vapi public keys so collaborators can use their own billing while sharing the app shell.
 - Ready-to-link Vercel project (`vercel link`), Tailwind styling, and TypeScript throughout.
 
 ## Prerequisites
@@ -54,21 +55,20 @@ All database access flows through API routes that run as Vercel Functions.
 | --- | --- | --- |
 | `/api/auth` | `POST` | `action=login|logout`; sets/clears `admin_session` cookie. |
 | `/api/agents` | `GET` | Returns `{ agents }`. |
-| `/api/agents` | `POST` | Auth-only. Creates a new agent. |
+| `/api/agents` | `POST` | Auth-only. Creates a new agent (optional `publicKey` override). |
 | `/api/agents/[name]` | `GET` | Fetch a single agent by name. |
-| `/api/agents/[name]` | `PUT` | Auth-only. Updates assistant ID. |
+| `/api/agents/[name]` | `PUT` | Auth-only. Updates assistant ID and/or per-agent public key. |
 | `/api/agents/[name]` | `DELETE` | Auth-only. Removes an agent. |
 
-Validation rules are enforced server-side: agent names must match `^[a-z0-9-]+$`, be 2-50 chars, avoid reserved words, and only `assistantId` can change on update.
+Validation rules are enforced server-side: agent names must match `^[a-z0-9-]+$`, be 2-50 chars, avoid reserved words, and only `assistantId` or `publicKey` can change on update.
 
 ## Frontend Flow
 - Home (`/`) fetches agents via `/api/agents` and displays them in a Tailwind grid.
 - Agent detail (`/agent/[name]`) loads data via `/api/agents/[name]` and renders the Vapi widget.
 - Admin login (`/admin/login`) submits to `/api/auth` and stores a 24h HTTP-only cookie.
-- Admin dashboard (`/admin`) performs create/update/delete actions via fetch calls to the API.
+- Admin dashboard (`/admin`) performs create/update/delete actions via fetch calls to the API, and lets you assign or clear per-agent public keys that override the project default.
 
 ## Next Steps
 - Add your KV store + env vars on Vercel before deploying.
 - Whitelist `https://hello-vapi.vercel.app` and `https://*.vercel.app` origins in Vapi if required.
 - Optionally customise styling or extend analytics/logging around Vapi events.
-

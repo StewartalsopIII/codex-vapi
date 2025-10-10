@@ -7,6 +7,7 @@ const MAX_NAME_LENGTH = 50;
 export type AgentValidationResult = {
   name: string;
   assistantId: string;
+  publicKey?: string | null;
 };
 
 export function normalizeAgentName(name: string): string {
@@ -18,7 +19,7 @@ export function validateAgentInput(input: unknown): { error?: string; value?: Ag
     return { error: 'Invalid payload' };
   }
 
-  const { name, assistantId } = input as Record<string, unknown>;
+  const { name, assistantId, publicKey } = input as Record<string, unknown>;
   const nameValidation = validateAgentName(name);
   if (nameValidation.error) {
     return { error: nameValidation.error };
@@ -37,10 +38,16 @@ export function validateAgentInput(input: unknown): { error?: string; value?: Ag
   }
   const assistantValue = assistantValidation.value;
 
+  const publicKeyValidation = validatePublicKey(publicKey);
+  if (publicKeyValidation.error) {
+    return { error: publicKeyValidation.error };
+  }
+
   return {
     value: {
       name: nameValue,
       assistantId: assistantValue,
+      publicKey: publicKeyValidation.value,
     },
   };
 }
@@ -79,6 +86,34 @@ export function validateAssistantId(value: unknown): { error?: string; value?: s
   const trimmed = value.trim();
   if (!trimmed) {
     return { error: 'assistantId is required' };
+  }
+
+  return { value: trimmed };
+}
+
+export function validatePublicKey(
+  value: unknown
+): { error?: string; value?: string | null | undefined } {
+  if (value === undefined) {
+    return { value: undefined };
+  }
+
+  if (value === null) {
+    return { value: null };
+  }
+
+  if (typeof value !== 'string') {
+    return { error: 'publicKey must be a string' };
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return { value: null };
+  }
+
+  if (!trimmed.startsWith('pub_')) {
+    return { error: 'publicKey must start with "pub_"' };
   }
 
   return { value: trimmed };

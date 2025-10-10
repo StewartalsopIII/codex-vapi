@@ -40,13 +40,19 @@ export default async function AgentPage({ params }: AgentPageProps) {
               {agent.assistantId}
             </span>
           </p>
+          <p className="mt-2 text-sm text-slate-500">
+            Using public key
+            <span className="ml-2 rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+              {agent.publicKey ?? 'project default'}
+            </span>
+          </p>
           <p className="mt-6 text-base text-slate-600">
             Connect in real time through the Vapi voice platform. Use the widget below to start or end a
             call and monitor live events as they stream from Vapi.
           </p>
 
           <div className="mt-8">
-            <VapiWidget assistantId={agent.assistantId} />
+            <VapiWidget assistantId={agent.assistantId} publicKey={agent.publicKey} />
           </div>
         </div>
       </div>
