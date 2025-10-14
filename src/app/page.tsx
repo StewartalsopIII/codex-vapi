@@ -1,6 +1,5 @@
 import Link from 'next/link';
 
-import AgentGrid from '@/components/AgentGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +31,6 @@ export default function HomePage() {
             Sign in to manage agents
           </Link>
         </div>
-        <AgentGrid />
       </div>
     </main>
   );

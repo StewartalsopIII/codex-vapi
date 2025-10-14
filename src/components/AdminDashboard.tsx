@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 
 import type { Agent } from '@/types/agent';
@@ -244,7 +245,7 @@ export default function AdminDashboard() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Existing Agents</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Manage assistant IDs, assign per-agent public keys, or remove agents you no longer need.
+              Manage assistant IDs, review stored public keys, and open each agent page for testing.
             </p>
           </div>
         </div>
@@ -278,6 +279,14 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex justify-end gap-2">
+                        <Link
+                          href={`/agent/${agent.name}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center rounded-md border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100"
+                        >
+                          View
+                        </Link>
                         <button
                           type="button"
                           onClick={() => startEditing(agent)}
