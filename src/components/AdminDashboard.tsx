@@ -7,13 +7,11 @@ import type { Agent } from '@/types/agent';
 type FormState = {
   name: string;
   assistantId: string;
-  publicKey: string;
 };
 
 type EditingState = {
   name: string;
   assistantId: string;
-  publicKey: string;
 } | null;
 
 async function fetchAgents(): Promise<Agent[]> {
@@ -32,10 +30,6 @@ async function createAgentRequest(payload: FormState) {
     assistantId: payload.assistantId.trim(),
   };
 
-  if (payload.publicKey.trim()) {
-    body.publicKey = payload.publicKey.trim();
-  }
-
   const response = await fetch('/api/agents', {
     method: 'POST',
     headers: {
@@ -53,12 +47,10 @@ async function createAgentRequest(payload: FormState) {
   return result.agent;
 }
 
-async function updateAgentRequest(name: string, assistantId: string, publicKey: string) {
+async function updateAgentRequest(name: string, assistantId: string) {
   const body: Record<string, string> = {
     assistantId: assistantId.trim(),
   };
-
-  body.publicKey = publicKey.trim();
 
   const response = await fetch(`/api/agents/${name}`, {
     method: 'PUT',
@@ -91,7 +83,6 @@ async function deleteAgentRequest(name: string) {
 const initialForm: FormState = {
   name: '',
   assistantId: '',
-  publicKey: '',
 };
 
 export default function AdminDashboard() {
@@ -145,7 +136,6 @@ export default function AdminDashboard() {
     setEditing({
       name: agent.name,
       assistantId: agent.assistantId,
-      publicKey: agent.publicKey ?? '',
     });
     setSuccessMessage(null);
     setError(null);
@@ -166,7 +156,7 @@ export default function AdminDashboard() {
     setSuccessMessage(null);
 
     try {
-      const updated = await updateAgentRequest(editing.name, editing.assistantId, editing.publicKey);
+      const updated = await updateAgentRequest(editing.name, editing.assistantId);
       setAgents((prev) => prev.map((agent) => (agent.name === updated.name ? updated : agent)));
       setEditing(null);
       setSuccessMessage(`Agent "${updated.name}" updated successfully.`);
@@ -199,10 +189,6 @@ export default function AdminDashboard() {
     setEditing((prev) => (prev ? { ...prev, assistantId: value } : prev));
   };
 
-  const updateEditingPublicKey = (value: string) => {
-    setEditing((prev) => (prev ? { ...prev, publicKey: value } : prev));
-  };
-
   return (
     <div className="space-y-8">
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -233,18 +219,6 @@ export default function AdminDashboard() {
               placeholder="asst_1234"
               className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
             />
-          </label>
-          <label className="flex flex-col text-sm font-medium text-slate-700">
-            Vapi public key
-            <input
-              value={formState.publicKey}
-              onChange={(event) => setFormState((prev) => ({ ...prev, publicKey: event.target.value }))}
-              placeholder="pub_xxx"
-              className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-            />
-            <span className="mt-1 text-xs font-normal text-slate-500">
-              Optional. Leave blank to use the project-wide key.
-            </span>
           </label>
           <div className="sm:col-span-2 flex items-center justify-between">
             <button
@@ -333,7 +307,7 @@ export default function AdminDashboard() {
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">Edit Agent</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Update the assistant and public key for <span className="font-semibold">{editing.name}</span>.
+            Update the assistant ID for <span className="font-semibold">{editing.name}</span>.
           </p>
           <form onSubmit={handleUpdate} className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col text-sm font-medium text-slate-700">
@@ -344,18 +318,6 @@ export default function AdminDashboard() {
                 onChange={(event) => updateEditingAssistantId(event.target.value)}
                 className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
               />
-            </label>
-            <label className="flex flex-col text-sm font-medium text-slate-700">
-              Vapi public key
-              <input
-                value={editing.publicKey}
-                onChange={(event) => updateEditingPublicKey(event.target.value)}
-                placeholder="pub_xxx"
-                className="mt-1 rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-              />
-              <span className="mt-1 text-xs font-normal text-slate-500">
-                Leave blank to inherit the project-wide key.
-              </span>
             </label>
             <div className="sm:col-span-2 flex gap-2">
               <button
